@@ -50,7 +50,7 @@ const postCSSPlugin = ({
           tmpDir = path.resolve(tmpDirPath, sourceRelDir),
           tmpFilePath = path.resolve(
             tmpDir,
-            `${sourceBaseName}-tmp-${Date.now()}${
+            `${sourceBaseName}-tmp-${Date.now()}-${sourceExt.replace(".", "")}${
               isModule ? ".module" : ""
             }.css`
           );
