@@ -12,7 +12,7 @@
   "scripts": {
     "build": "NODE_ENV=production node build.js && tsc --emitDeclarationOnly",
     "dev": "NODE_ENV=development node build.js",
-    "test": "cd test && mocha 'index.js' --no-timeout --exit",
+    "test": "yarn build && cd test && mocha 'index.js' --no-timeout --exit",
     "fmt": "prettier --write .",
     "fmt:check": "prettier --check ."
   },
