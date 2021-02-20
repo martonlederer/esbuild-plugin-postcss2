@@ -27,11 +27,6 @@ interface CSSModule {
   };
 }
 
-interface ModulePath {
-  originalPath: string;
-  temporaryPath: string;
-}
-
 const postCSSPlugin = ({
   plugins = [],
   modules = true,
@@ -41,19 +36,14 @@ const postCSSPlugin = ({
   setup(build) {
     // get a temporary path where we can save compiled CSS
     const tmpDirPath = tmp.dirSync().name,
-      modulesMap: CSSModule[] = [],
-      pathMap: ModulePath[] = [];
+      modulesMap: CSSModule[] = [];
 
     const modulesPlugin = postcssModules({
       generateScopedName: "[name]__[local]___[hash:base64:5]",
       ...(typeof modules !== "boolean" ? modules : {}),
       getJSON(filepath, json, outpath) {
-        const tmpFilePath = pathMap.find(
-          ({ originalPath }) => originalPath === filepath
-        ).temporaryPath;
-
         modulesMap.push({
-          path: tmpFilePath,
+          path: filepath,
           map: json
         });
 
@@ -83,12 +73,6 @@ const postCSSPlugin = ({
           );
 
         await ensureDir(tmpDir);
-
-        // add to path map so that postcss-modules can parse it after resolved
-        pathMap.push({
-          originalPath: sourceFullPath,
-          temporaryPath: tmpFilePath
-        });
 
         const fileContent = await readFile(sourceFullPath);
         let css = sourceExt === ".css" ? fileContent : "";
@@ -121,7 +105,10 @@ const postCSSPlugin = ({
 
         return {
           namespace: isModule ? "postcss-module" : "file",
-          path: tmpFilePath
+          path: tmpFilePath,
+          pluginData: {
+            originalPath: sourceFullPath
+          }
         };
       }
     );
@@ -130,7 +117,9 @@ const postCSSPlugin = ({
     build.onLoad(
       { filter: /.*/, namespace: "postcss-module" },
       async (args) => {
-        const mod = modulesMap.find(({ path }) => path === args.path),
+        const mod = modulesMap.find(
+            ({ path }) => path === args?.pluginData?.originalPath
+          ),
           resolveDir = path.dirname(args.path);
 
         return {
