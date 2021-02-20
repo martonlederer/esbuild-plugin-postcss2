@@ -1,6 +1,7 @@
 import { Plugin } from "esbuild";
 import { Plugin as PostCSSPlugin } from "postcss";
 import { ensureDir, readFile, writeFile } from "fs-extra";
+import { TextDecoder } from "util";
 import {
   SassException,
   Result as SassResult,
@@ -12,7 +13,6 @@ import postcss from "postcss";
 import postcssModules from "postcss-modules";
 import less from "less";
 import stylus from "stylus";
-import { TextDecoder } from "util";
 
 interface PostCSSPluginOptions {
   plugins: PostCSSPlugin[];
@@ -27,6 +27,11 @@ interface CSSModule {
   };
 }
 
+interface ModulePath {
+  originalPath: string;
+  temporaryPath: string;
+}
+
 const postCSSPlugin = ({
   plugins = [],
   modules = true,
@@ -36,7 +41,33 @@ const postCSSPlugin = ({
   setup(build) {
     // get a temporary path where we can save compiled CSS
     const tmpDirPath = tmp.dirSync().name,
-      modulesMap: CSSModule[] = [];
+      modulesMap: CSSModule[] = [],
+      pathMap: ModulePath[] = [];
+
+    // parse css modules with postcss-modules
+    if (modules !== false) {
+      plugins.unshift(
+        postcssModules({
+          ...(typeof modules !== "boolean" ? modules : {}),
+          getJSON(filepath, json, outpath) {
+            const tmpFilePath = pathMap.find(
+              ({ originalPath }) => originalPath === filepath
+            ).temporaryPath;
+
+            modulesMap.push({
+              path: tmpFilePath,
+              map: json
+            });
+
+            if (
+              typeof modules !== "boolean" &&
+              typeof modules.getJSON === "function"
+            )
+              return modules.getJSON(filepath, json, outpath);
+          }
+        })
+      );
+    }
 
     build.onResolve(
       { filter: /.\.(css|sass|scss|less|styl)$/, namespace: "file" },
@@ -57,29 +88,14 @@ const postCSSPlugin = ({
 
         await ensureDir(tmpDir);
 
+        // add to path map so that postcss-modules can parse it after resolved
+        pathMap.push({
+          originalPath: sourceFullPath,
+          temporaryPath: tmpFilePath
+        });
+
         const fileContent = await readFile(sourceFullPath);
         let css = sourceExt === ".css" ? fileContent : "";
-
-        // parse css modules with postcss-modules
-        if (modules !== false && isModule) {
-          plugins.unshift(
-            postcssModules({
-              ...(typeof modules !== "boolean" ? modules : {}),
-              getJSON(filepath, json, outpath) {
-                modulesMap.push({
-                  path: tmpFilePath,
-                  map: json
-                });
-
-                if (
-                  typeof modules !== "boolean" &&
-                  typeof modules.getJSON === "function"
-                )
-                  return modules.getJSON(filepath, json, outpath);
-              }
-            })
-          );
-        }
 
         // parse files with preprocessors
         if (sourceExt === ".sass" || sourceExt === ".scss")
@@ -118,8 +134,6 @@ const postCSSPlugin = ({
       async (args) => {
         const mod = modulesMap.find(({ path }) => path === args.path),
           resolveDir = path.dirname(args.path);
-
-        console.log(mod);
 
         return {
           resolveDir,

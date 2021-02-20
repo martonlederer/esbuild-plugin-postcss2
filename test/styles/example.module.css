@@ -1,3 +1,11 @@
 .TestModule {
   align-items: center;
 }
+
+.TestModuleAnother {
+  justify-content: space-between;
+}
+
+.TextModuleLast {
+  width: 100vw;
+}
