@@ -133,10 +133,9 @@ const postCSSPlugin = ({
 
         return {
           resolveDir,
-          contents: `import "${args.path.replace(
-            resolveDir,
-            "."
-          )}"; export default ${JSON.stringify(mod.map)};`
+          contents: `import "${args.path}";\nexport default ${JSON.stringify(
+            mod && mod.map ? mod.map : {}
+          )};`
         };
       }
     );
