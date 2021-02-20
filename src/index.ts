@@ -12,6 +12,7 @@ import postcss from "postcss";
 import postcssModules from "postcss-modules";
 import less from "less";
 import stylus from "stylus";
+import { TextDecoder } from "util";
 
 interface PostCSSPluginOptions {
   plugins: PostCSSPlugin[];
