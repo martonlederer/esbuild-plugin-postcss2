@@ -42,32 +42,26 @@ const postCSSPlugin = ({
     // get a temporary path where we can save compiled CSS
     const tmpDirPath = tmp.dirSync().name,
       modulesMap: CSSModule[] = [],
-      pathMap: ModulePath[] = [];
+      pathMap: ModulePath[] = [],
+      modulesPlugin = postcssModules({
+        ...(typeof modules !== "boolean" ? modules : {}),
+        getJSON(filepath, json, outpath) {
+          const tmpFilePath = pathMap.find(
+            ({ originalPath }) => originalPath === filepath
+          ).temporaryPath;
 
-    // parse css modules with postcss-modules
-    if (modules !== false) {
-      plugins.unshift(
-        postcssModules({
-          ...(typeof modules !== "boolean" ? modules : {}),
-          getJSON(filepath, json, outpath) {
-            const tmpFilePath = pathMap.find(
-              ({ originalPath }) => originalPath === filepath
-            ).temporaryPath;
+          modulesMap.push({
+            path: tmpFilePath,
+            map: json
+          });
 
-            modulesMap.push({
-              path: tmpFilePath,
-              map: json
-            });
-
-            if (
-              typeof modules !== "boolean" &&
-              typeof modules.getJSON === "function"
-            )
-              return modules.getJSON(filepath, json, outpath);
-          }
-        })
-      );
-    }
+          if (
+            typeof modules !== "boolean" &&
+            typeof modules.getJSON === "function"
+          )
+            return modules.getJSON(filepath, json, outpath);
+        }
+      });
 
     build.onResolve(
       { filter: /.\.(css|sass|scss|less|styl)$/, namespace: "file" },
@@ -113,7 +107,9 @@ const postCSSPlugin = ({
           ).css;
 
         // wait for plugins to complete parsing & get result
-        const result = await postcss(plugins).process(css, {
+        const result = await postcss(
+          isModule ? [modulesPlugin, ...plugins] : plugins
+        ).process(css, {
           from: sourceFullPath,
           to: tmpFilePath
         });
