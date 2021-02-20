@@ -42,26 +42,28 @@ const postCSSPlugin = ({
     // get a temporary path where we can save compiled CSS
     const tmpDirPath = tmp.dirSync().name,
       modulesMap: CSSModule[] = [],
-      pathMap: ModulePath[] = [],
-      modulesPlugin = postcssModules({
-        ...(typeof modules !== "boolean" ? modules : {}),
-        getJSON(filepath, json, outpath) {
-          const tmpFilePath = pathMap.find(
-            ({ originalPath }) => originalPath === filepath
-          ).temporaryPath;
+      pathMap: ModulePath[] = [];
 
-          modulesMap.push({
-            path: tmpFilePath,
-            map: json
-          });
+    const modulesPlugin = postcssModules({
+      generateScopedName: "[name]__[local]___[hash:base64:5]",
+      ...(typeof modules !== "boolean" ? modules : {}),
+      getJSON(filepath, json, outpath) {
+        const tmpFilePath = pathMap.find(
+          ({ originalPath }) => originalPath === filepath
+        ).temporaryPath;
 
-          if (
-            typeof modules !== "boolean" &&
-            typeof modules.getJSON === "function"
-          )
-            return modules.getJSON(filepath, json, outpath);
-        }
-      });
+        modulesMap.push({
+          path: tmpFilePath,
+          map: json
+        });
+
+        if (
+          typeof modules !== "boolean" &&
+          typeof modules.getJSON === "function"
+        )
+          return modules.getJSON(filepath, json, outpath);
+      }
+    });
 
     build.onResolve(
       { filter: /.\.(css|sass|scss|less|styl)$/, namespace: "file" },
