@@ -1,19 +1,21 @@
 const { build } = require("esbuild"),
   { copyFile } = require("fs");
 
-const production = process.env.NODE_ENV === "production";
+const production = process.env.NODE_ENV === "production",
+  formats = ["cjs", "esm"];
 
-build({
-  entryPoints: ["./src/index.ts"],
-  watch: !production,
-  format: "cjs",
-  outfile: `./dist/index.js`
-})
-  .then(() => {
-    // copy module declarations
-    copyFile("./src/modules.d.ts", "./dist/modules.d.ts", (err) => {
-      if (err) throw err;
-      console.log("[modules.d.ts] copied");
+(async () => {
+  for (const format of formats) {
+    await build({
+      entryPoints: ["./src/index.ts"],
+      watch: !production,
+      format,
+      outfile: `./dist/index${format === "cjs" ? "" : "." + format}.js`
     });
-  })
-  .catch(() => process.exit(1));
+  }
+
+  copyFile("./src/modules.d.ts", "./dist/modules.d.ts", (err) => {
+    if (err) throw err;
+    console.log("[modules.d.ts] copied");
+  });
+})();
