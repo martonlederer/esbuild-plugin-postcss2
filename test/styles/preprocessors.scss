@@ -1,0 +1,8 @@
+$test: translate(-50%, -50%);
+
+.ScssClass {
+  position: relative;
+  top: 50%;
+  left: 50%;
+  transform: $test;
+}
