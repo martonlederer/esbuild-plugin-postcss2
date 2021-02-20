@@ -106,7 +106,27 @@ const postCSSPlugin = ({
         await writeFile(tmpFilePath, result.css);
 
         return {
+          namespace: isModule ? "postcss-module" : "file",
           path: tmpFilePath
+        };
+      }
+    );
+
+    // load css modules
+    build.onLoad(
+      { filter: /.*/, namespace: "postcss-module" },
+      async (args) => {
+        const mod = modulesMap.find(({ path }) => path === args.path),
+          resolveDir = path.dirname(args.path);
+
+        console.log(mod);
+
+        return {
+          resolveDir,
+          contents: `import "${args.path.replace(
+            resolveDir,
+            "."
+          )}"; export default ${JSON.stringify(mod.map)};`
         };
       }
     );

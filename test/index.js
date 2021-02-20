@@ -20,6 +20,14 @@ describe("PostCSS esbuild tests", () => {
       })
       .catch(done);
   });
+  it("Works with CSS modules", (done) => {
+    test("modules")
+      .then((res) => {
+        assert(res);
+        done();
+      })
+      .catch(done);
+  });
 });
 
 function test(test) {
