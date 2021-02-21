@@ -16,7 +16,7 @@ npm i -D esbuild-plugin-postcss2
 
 ## Usage
 
-Add to the plugin to your esbuild plugins:
+Add the plugin to your esbuild plugins:
 
 ```js
 const esbuild = require("esbuild");

@@ -10,7 +10,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "NODE_ENV=production node build.js && tsc --emitDeclarationOnly",
+    "build": "NODE_ENV=production node build.js",
     "dev": "NODE_ENV=development node build.js",
     "test": "yarn build && cd test && mocha 'index.js' --no-timeout --exit",
     "fmt": "prettier --write .",
@@ -20,11 +20,12 @@
     "pre-commit": "prettier --write . && git add -A"
   },
   "files": [
-    "dist"
+    "dist",
+    "src/modules.d.ts"
   ],
   "main": "dist/index.js",
   "module": "dist/index.esm.js",
-  "types": "dist/index.d.ts",
+  "types": "src/modules.d.ts",
   "dependencies": {
     "autoprefixer": "^10.2.4",
     "fs-extra": "^9.1.0",

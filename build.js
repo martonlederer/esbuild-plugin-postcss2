@@ -13,9 +13,4 @@ const production = process.env.NODE_ENV === "production",
       outfile: `./dist/index${format === "cjs" ? "" : "." + format}.js`
     });
   }
-
-  copyFile("./src/modules.d.ts", "./dist/modules.d.ts", (err) => {
-    if (err) throw err;
-    console.log("[modules.d.ts] copied");
-  });
 })();
