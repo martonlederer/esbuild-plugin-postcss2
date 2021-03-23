@@ -56,8 +56,10 @@ const postCSSPlugin = ({
     });
 
     build.onResolve(
-      { filter: /.\.(css|sass|scss|less|styl)$/, namespace: "file" },
+      { filter: /.\.(css|sass|scss|less|styl)$/ },
       async (args) => {
+        if (args.namespace !== "file" && args.namespace !== "") return;
+
         const sourceFullPath = path.resolve(args.resolveDir, args.path),
           sourceExt = path.extname(sourceFullPath),
           sourceBaseName = path.basename(sourceFullPath, sourceExt),
@@ -65,13 +67,10 @@ const postCSSPlugin = ({
           sourceRelDir = path.relative(path.dirname(rootDir), sourceDir),
           isModule = sourceBaseName.match(/\.module$/),
           tmpDir = path.resolve(tmpDirPath, sourceRelDir),
-          tmpFilePath = path.resolve(
-            tmpDir,
-            `${sourceBaseName}-tmp-${Date.now()}-${sourceExt.replace(".", "")}${
-              isModule ? ".module" : ""
-            }.css`
-          );
+          tmpFilePath = path.resolve(tmpDir, `${sourceBaseName}.css`);
 
+        console.log(tmpDir);
+        console.log(tmpFilePath);
         await ensureDir(tmpDir);
 
         const fileContent = await readFile(sourceFullPath);
