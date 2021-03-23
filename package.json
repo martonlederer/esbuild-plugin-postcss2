@@ -47,14 +47,13 @@
     "@types/tmp": "^0.2.0",
     "chai": "^4.3.4",
     "cross-env": "^7.0.3",
-    "esbuild": "^0.8.49",
+    "esbuild": "^0.9.6",
     "mocha": "^8.3.2",
     "prettier": "^2.2.1",
     "typescript": "^4.2.3",
     "yorkie": "^2.0.0"
   },
   "peerDependencies": {
-    "esbuild": "^0.9.6",
     "less": "^4.x",
     "postcss": "8.x",
     "sass": "^1.x",
