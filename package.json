@@ -10,8 +10,8 @@
     "access": "public"
   },
   "scripts": {
-    "build": "NODE_ENV=production node build.js",
-    "dev": "NODE_ENV=development node build.js",
+    "build": "cross-env NODE_ENV=production node build.js",
+    "dev": " cross-env NODE_ENV=development node build.js",
     "test": "yarn build && cd test && mocha 'index.js' --no-timeout --exit",
     "fmt": "prettier --write .",
     "fmt:check": "prettier --check ."
@@ -29,11 +29,11 @@
   "dependencies": {
     "autoprefixer": "^10.2.4",
     "fs-extra": "^9.1.0",
-    "less": "^4.1.1",
-    "postcss": "^8.2.6",
+    "less": "^4.x",
+    "postcss": "8.x",
     "postcss-modules": "^4.0.0",
-    "sass": "^1.32.8",
-    "stylus": "^0.54.8",
+    "sass": "^1.x",
+    "stylus": "^0.x",
     "tmp": "^0.2.1"
   },
   "devDependencies": {
@@ -46,6 +46,7 @@
     "@types/stylus": "^0.48.33",
     "@types/tmp": "^0.2.0",
     "chai": "^4.3.0",
+    "cross-env": "^7.0.3",
     "esbuild": "^0.8.49",
     "mocha": "^8.3.0",
     "prettier": "^2.2.1",
