@@ -69,8 +69,6 @@ const postCSSPlugin = ({
           tmpDir = path.resolve(tmpDirPath, sourceRelDir),
           tmpFilePath = path.resolve(tmpDir, `${sourceBaseName}.css`);
 
-        console.log(tmpDir);
-        console.log(tmpFilePath);
         await ensureDir(tmpDir);
 
         const fileContent = await readFile(sourceFullPath);
