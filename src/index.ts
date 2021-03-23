@@ -67,7 +67,12 @@ const postCSSPlugin = ({
           sourceRelDir = path.relative(path.dirname(rootDir), sourceDir),
           isModule = sourceBaseName.match(/\.module$/),
           tmpDir = path.resolve(tmpDirPath, sourceRelDir),
-          tmpFilePath = path.resolve(tmpDir, `${sourceBaseName}.css`);
+          tmpFilePath = path.resolve(
+            tmpDir,
+            `${sourceBaseName}-tmp-${Date.now()}-${sourceExt.replace(".", "")}${
+              isModule ? ".module" : ""
+            }.css`
+          );
 
         await ensureDir(tmpDir);
 

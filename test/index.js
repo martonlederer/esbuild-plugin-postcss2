@@ -5,7 +5,7 @@ const autoprefixer = require("autoprefixer"),
 
 describe("PostCSS esbuild tests", () => {
   it("Works with basic CSS imports", (done) => {
-    test("tests/basic.ts")
+    test(["tests/basic.ts"])
       .then((res) => {
         assert(res);
         done();
@@ -13,7 +13,7 @@ describe("PostCSS esbuild tests", () => {
       .catch(done);
   });
   it("Works with preprocessors", (done) => {
-    test("tests/preprocessors.ts")
+    test(["tests/preprocessors.ts"])
       .then((res) => {
         assert(res);
         done();
@@ -21,7 +21,7 @@ describe("PostCSS esbuild tests", () => {
       .catch(done);
   });
   it("Works with CSS modules", (done) => {
-    test("tests/modules.ts")
+    test(["tests/modules.ts"])
       .then((res) => {
         assert(res);
         done();
@@ -29,7 +29,7 @@ describe("PostCSS esbuild tests", () => {
       .catch(done);
   });
   it("Works with CSS as entrypoint", (done) => {
-    test("tests/styles.css")
+    test(["tests/styles.css", "tests/styles2.css"])
       .then((res) => {
         assert(res);
         done();
@@ -40,7 +40,7 @@ describe("PostCSS esbuild tests", () => {
 
 function test(entryPoint) {
   return build({
-    entryPoints: [entryPoint],
+    entryPoints: entryPoint,
     bundle: true,
     outdir: "dist",
     plugins: [
