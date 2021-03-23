@@ -3,3 +3,4 @@ dist
 build
 yarn-error.log
 test/dist
+package-lock.json
