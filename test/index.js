@@ -36,6 +36,14 @@ describe("PostCSS esbuild tests", () => {
       })
       .catch(done);
   });
+  it("Works with node_modules import", (done) => {
+    test(["tests/node_modules.ts"])
+      .then((res) => {
+        assert(res);
+        done();
+      })
+      .catch(done);
+  });
 });
 
 function test(entryPoint) {
