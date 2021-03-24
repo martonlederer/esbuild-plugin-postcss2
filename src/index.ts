@@ -73,12 +73,15 @@ const postCSSPlugin = ({
         const sourceRelDir = path.relative(path.dirname(rootDir), sourceDir);
         const isModule = sourceBaseName.match(/\.module$/);
         const tmpDir = path.resolve(tmpDirPath, sourceRelDir);
-        const tmpFilePath = path.resolve(
+
+        let tmpFilePath = path.resolve(
           tmpDir,
-          `${sourceBaseName}-tmp-${Date.now()}-${sourceExt.replace(".", "")}${
-            isModule ? ".module" : ""
-          }.css`
+          `${Date.now()}-${sourceBaseName}.css`
         );
+
+        // When CSS is an entry-point we don't want to append Date.now()
+        if (args.kind === "entry-point")
+          tmpFilePath = path.resolve(tmpDir, `${sourceBaseName}.css`);
 
         await ensureDir(tmpDir);
 
