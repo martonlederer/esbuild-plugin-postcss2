@@ -13,6 +13,7 @@ import postcss from "postcss";
 import postcssModules from "postcss-modules";
 import less from "less";
 import stylus from "stylus";
+import resolveFile from "resolve-file";
 
 interface PostCSSPluginOptions {
   plugins: PostCSSPlugin[];
@@ -56,21 +57,31 @@ const postCSSPlugin = ({
     });
 
     build.onResolve(
-      { filter: /.\.(css|sass|scss|less|styl)$/, namespace: "file" },
+      { filter: /.\.(css|sass|scss|less|styl)$/ },
       async (args) => {
-        const sourceFullPath = path.resolve(args.resolveDir, args.path),
-          sourceExt = path.extname(sourceFullPath),
-          sourceBaseName = path.basename(sourceFullPath, sourceExt),
-          sourceDir = path.dirname(sourceFullPath),
-          sourceRelDir = path.relative(path.dirname(rootDir), sourceDir),
-          isModule = sourceBaseName.match(/\.module$/),
-          tmpDir = path.resolve(tmpDirPath, sourceRelDir),
-          tmpFilePath = path.resolve(
-            tmpDir,
-            `${sourceBaseName}-tmp-${Date.now()}-${sourceExt.replace(".", "")}${
-              isModule ? ".module" : ""
-            }.css`
-          );
+        // Namespace is empty when using CSS as an entrypoint
+        if (args.namespace !== "file" && args.namespace !== "") return;
+
+        // Resolve files also from node_modules (ex: npm normalize.css)
+        let sourceFullPath = resolveFile(args.path);
+        if (!sourceFullPath)
+          sourceFullPath = path.resolve(args.resolveDir, args.path);
+
+        const sourceExt = path.extname(sourceFullPath);
+        const sourceBaseName = path.basename(sourceFullPath, sourceExt);
+        const sourceDir = path.dirname(sourceFullPath);
+        const sourceRelDir = path.relative(path.dirname(rootDir), sourceDir);
+        const isModule = sourceBaseName.match(/\.module$/);
+        const tmpDir = path.resolve(tmpDirPath, sourceRelDir);
+
+        let tmpFilePath = path.resolve(
+          tmpDir,
+          `${Date.now()}-${sourceBaseName}.css`
+        );
+
+        // When CSS is an entry-point we don't want to append Date.now()
+        if (args.kind === "entry-point")
+          tmpFilePath = path.resolve(tmpDir, `${sourceBaseName}.css`);
 
         await ensureDir(tmpDir);
 
