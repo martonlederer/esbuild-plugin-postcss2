@@ -64,6 +64,7 @@ const postCSSPlugin = ({
       return {
         namespace: isModule ? "postcss-module" : "file",
         path: tmpFilePath,
+        watchFiles: [sourceFullPath],
         pluginData: {
           originalPath: sourceFullPath
         }
