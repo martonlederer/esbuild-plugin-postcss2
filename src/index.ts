@@ -43,10 +43,16 @@ const postCSSPlugin = ({
       generateScopedName: "[name]__[local]___[hash:base64:5]",
       ...(typeof modules !== "boolean" ? modules : {}),
       getJSON(filepath, json, outpath) {
-        modulesMap.push({
-          path: filepath,
-          map: json
-        });
+        // Make sure to replace json map instead of pushing new map everytime with edit file on watch
+        const mapIndex = modulesMap.findIndex((m) => m.path === filepath);
+        if (mapIndex !== -1) {
+          modulesMap[mapIndex].map = json;
+        } else {
+          modulesMap.push({
+            path: filepath,
+            map: json
+          });
+        }
 
         if (
           typeof modules !== "boolean" &&
@@ -62,7 +68,7 @@ const postCSSPlugin = ({
         // Namespace is empty when using CSS as an entrypoint
         if (args.namespace !== "file" && args.namespace !== "") return;
 
-        // Resolve files also from node_modules (ex: npm normalize.css)
+        // Resolve files from node_modules (ex: npm install normalize.css)
         let sourceFullPath = resolveFile(args.path);
         if (!sourceFullPath)
           sourceFullPath = path.resolve(args.resolveDir, args.path);

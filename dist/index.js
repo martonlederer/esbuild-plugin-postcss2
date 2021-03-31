@@ -45,10 +45,15 @@ const postCSSPlugin = ({
       generateScopedName: "[name]__[local]___[hash:base64:5]",
       ...typeof modules !== "boolean" ? modules : {},
       getJSON(filepath, json, outpath) {
-        modulesMap.push({
-          path: filepath,
-          map: json
-        });
+        const mapIndex = modulesMap.findIndex((m) => m.path === filepath);
+        if (mapIndex !== -1) {
+          modulesMap[mapIndex].map = json;
+        } else {
+          modulesMap.push({
+            path: filepath,
+            map: json
+          });
+        }
         if (typeof modules !== "boolean" && typeof modules.getJSON === "function")
           return modules.getJSON(filepath, json, outpath);
       }
