@@ -7,10 +7,10 @@
   "resolved" "https://registry.npmjs.org/@types/chai/-/chai-4.2.15.tgz"
   "version" "4.2.15"
 
-"@types/fs-extra@^9.0.8":
-  "integrity" "sha512-bnlTVTwq03Na7DpWxFJ1dvnORob+Otb8xHyUqUWhqvz/Ksg8+JXPlR52oeMSZ37YEOa5PyccbgUNutiQdi13TA=="
-  "resolved" "https://registry.npmjs.org/@types/fs-extra/-/fs-extra-9.0.8.tgz"
-  "version" "9.0.8"
+"@types/fs-extra@^9.0.9":
+  "integrity" "sha512-5TqDycCl0oMzwzd1cIjSJWMKMvLCDVErle4ZTjU4EmHDURR/+yZghe6GDHMCpHtcVfq0x0gMoOM546/5TbYHrg=="
+  "resolved" "https://registry.npmjs.org/@types/fs-extra/-/fs-extra-9.0.9.tgz"
+  "version" "9.0.9"
   dependencies:
     "@types/node" "*"
 
@@ -24,10 +24,10 @@
   "resolved" "https://registry.npmjs.org/@types/mocha/-/mocha-8.2.2.tgz"
   "version" "8.2.2"
 
-"@types/node@*", "@types/node@^14.14.35":
-  "integrity" "sha512-Lt+wj8NVPx0zUmUwumiVXapmaLUcAk3yPuHCFVXras9k5VT9TdhJqKqGVUQCD60OTMCl0qxJ57OiTL0Mic3Iag=="
-  "resolved" "https://registry.npmjs.org/@types/node/-/node-14.14.35.tgz"
-  "version" "14.14.35"
+"@types/node@*", "@types/node@^14.14.37":
+  "integrity" "sha512-XYmBiy+ohOR4Lh5jE379fV2IU+6Jn4g5qASinhitfyO71b/sCo6MKsMLF5tc7Zf2CE8hViVQyYSobJNke8OvUw=="
+  "resolved" "https://registry.npmjs.org/@types/node/-/node-14.14.37.tgz"
+  "version" "14.14.37"
 
 "@types/sass@^1.16.0":
   "integrity" "sha512-2XZovu4NwcqmtZtsBR5XYLw18T8cBCnU2USFHTnYLLHz9fkhnoEMoDsqShJIOFsFhn5aJHjweiUUdTrDGujegA=="
@@ -374,10 +374,10 @@
   dependencies:
     "prr" "~1.0.1"
 
-"esbuild@^0.9.6":
-  "integrity" "sha512-F6vASxU0wT/Davt9aj2qtDwDNSkQxh9VbyO56M7PDWD+D/Vgq/rmUDGDQo7te76W5auauVojjnQr/wTu3vpaUA=="
-  "resolved" "https://registry.npmjs.org/esbuild/-/esbuild-0.9.6.tgz"
-  "version" "0.9.6"
+"esbuild@^0.11.2":
+  "integrity" "sha512-8d5FCQrR+juXC2u9zjTQ3+IYiuFuaWyKYwmApFJLquTrYNbk36H/+MkRQeTuOJg7IjUchRX2Ulwo1zRYXZ1pUg=="
+  "resolved" "https://registry.npmjs.org/esbuild/-/esbuild-0.11.2.tgz"
+  "version" "0.11.2"
 
 "escalade@^3.1.1":
   "integrity" "sha512-k0er2gUkLf8O0zKJiAhmkTnJlTvINGv7ygDNPbeIsX/TJjGJZHuh9B2UxbsaEkmlEo9MfhrSzmhIlhRlI2GXnw=="

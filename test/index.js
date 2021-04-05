@@ -1,7 +1,8 @@
 const autoprefixer = require("autoprefixer"),
   { build } = require("esbuild"),
   postCSS = require("../dist"),
-  { assert } = require("chai");
+  { assert } = require("chai"),
+  fs = require("fs");
 
 describe("PostCSS esbuild tests", () => {
   it("Works with basic CSS imports", (done) => {
@@ -43,6 +44,38 @@ describe("PostCSS esbuild tests", () => {
         done();
       })
       .catch(done);
+  });
+  it("Works while waching css files", (done) => {
+    let notTriggerTimeout = null;
+    build({
+      entryPoints: ["tests/watch.ts"],
+      bundle: true,
+      outdir: "dist",
+      watch: {
+        onRebuild: (error, result) => {
+          notTriggerTimeout = null;
+          if (error) return done(error);
+          assert(result);
+          done();
+        }
+      },
+      plugins: [
+        postCSS.default({
+          plugins: [autoprefixer]
+        })
+      ]
+    })
+      .then(() => {
+        // test if modifying the css actually triggers the onRebuild event
+        const data = `.Test { display: block; }`;
+        fs.writeFile("./styles/watch.css", data, (err) => {
+          if (err) return done(err);
+          notTriggerTimeout = setTimeout(() => {
+            done("Watch file not triggered!");
+          }, 1000);
+        });
+      })
+      .catch(() => process.exit(1));
   });
 });
 
