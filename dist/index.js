@@ -9,7 +9,7 @@ var __export = (target, all) => {
   for (var name in all)
     __defProp(target, name, {get: all[name], enumerable: true});
 };
-var __exportStar = (target, module2, desc) => {
+var __reExport = (target, module2, desc) => {
   if (module2 && typeof module2 === "object" || typeof module2 === "function") {
     for (let key of __getOwnPropNames(module2))
       if (!__hasOwnProp.call(target, key) && key !== "default")
@@ -18,7 +18,7 @@ var __exportStar = (target, module2, desc) => {
   return target;
 };
 var __toModule = (module2) => {
-  return __exportStar(__markAsModule(__defProp(module2 != null ? __create(__getProtoOf(module2)) : {}, "default", module2 && module2.__esModule && "default" in module2 ? {get: () => module2.default, enumerable: true} : {value: module2, enumerable: true})), module2);
+  return __reExport(__markAsModule(__defProp(module2 != null ? __create(__getProtoOf(module2)) : {}, "default", module2 && module2.__esModule && "default" in module2 ? {get: () => module2.default, enumerable: true} : {value: module2, enumerable: true})), module2);
 };
 __markAsModule(exports);
 __export(exports, {
@@ -60,7 +60,7 @@ const postCSSPlugin = ({
     });
     build.onResolve({filter: /.\.(css|sass|scss|less|styl)$/}, async (args) => {
       if (args.namespace !== "file" && args.namespace !== "")
-        return;
+        return {path: args.path};
       let sourceFullPath = (0, import_resolve_file.default)(args.path);
       if (!sourceFullPath)
         sourceFullPath = import_path.default.resolve(args.resolveDir, args.path);

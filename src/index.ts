@@ -66,7 +66,8 @@ const postCSSPlugin = ({
       { filter: /.\.(css|sass|scss|less|styl)$/ },
       async (args) => {
         // Namespace is empty when using CSS as an entrypoint
-        if (args.namespace !== "file" && args.namespace !== "") return;
+        if (args.namespace !== "file" && args.namespace !== "")
+          return { path: args.path }; // quick fix for https://github.com/martonlederer/esbuild-plugin-postcss2/pull/6#issuecomment-813598304 I don't know why esbuild can't resolve a file that is actually there but returning the full path after he was not able to resolve fixes the issue (might be some async write file problems but honestly I don't know)
 
         // Resolve files from node_modules (ex: npm install normalize.css)
         let sourceFullPath = resolveFile(args.path);

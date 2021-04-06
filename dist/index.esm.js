@@ -34,7 +34,7 @@ const postCSSPlugin = ({
     });
     build.onResolve({filter: /.\.(css|sass|scss|less|styl)$/}, async (args) => {
       if (args.namespace !== "file" && args.namespace !== "")
-        return;
+        return {path: args.path};
       let sourceFullPath = resolveFile(args.path);
       if (!sourceFullPath)
         sourceFullPath = path.resolve(args.resolveDir, args.path);
