@@ -15,10 +15,15 @@ import less from "less";
 import stylus from "stylus";
 import resolveFile from "resolve-file";
 
+type StylusRenderOptions = Parameters<typeof stylus.render>[1]; // The Stylus.RenderOptions interface doesn't seem to be exported... So next best
+
 interface PostCSSPluginOptions {
   plugins: PostCSSPlugin[];
   modules: boolean | any;
   rootDir?: string;
+  sassOptions?: SassOptions;
+  lessOptions?: Less.Options;
+  stylusOptions?: StylusRenderOptions;
 }
 
 interface CSSModule {
@@ -31,7 +36,10 @@ interface CSSModule {
 const postCSSPlugin = ({
   plugins = [],
   modules = true,
-  rootDir = process.cwd()
+  rootDir = process.cwd(),
+  sassOptions = {},
+  lessOptions = {},
+  stylusOptions = {}
 }: PostCSSPluginOptions): Plugin => ({
   name: "postcss2",
   setup(build) {
@@ -96,14 +104,18 @@ const postCSSPlugin = ({
 
         // parse files with preprocessors
         if (sourceExt === ".sass" || sourceExt === ".scss")
-          css = (await renderSass({ file: sourceFullPath })).css.toString();
+          css = (
+            await renderSass({ ...sassOptions, file: sourceFullPath })
+          ).css.toString();
         if (sourceExt === ".styl")
           css = await renderStylus(new TextDecoder().decode(fileContent), {
+            ...stylusOptions,
             filename: sourceFullPath
           });
         if (sourceExt === ".less")
           css = (
             await less.render(new TextDecoder().decode(fileContent), {
+              ...lessOptions,
               filename: sourceFullPath,
               rootpath: path.dirname(args.path)
             })
@@ -160,7 +172,10 @@ function renderSass(options: SassOptions): Promise<SassResult> {
   });
 }
 
-function renderStylus(str: string, options): Promise<string> {
+function renderStylus(
+  str: string,
+  options: StylusRenderOptions
+): Promise<string> {
   return new Promise((resolve, reject) => {
     stylus.render(str, options, (e, res) => {
       if (e) reject(e);
