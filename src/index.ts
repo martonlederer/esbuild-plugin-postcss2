@@ -83,21 +83,36 @@ const postCSSPlugin = ({
 
         const sourceExt = path.extname(sourceFullPath);
         const sourceBaseName = path.basename(sourceFullPath, sourceExt);
-        const sourceDir = path.dirname(sourceFullPath);
-        const sourceRelDir = path.relative(path.dirname(rootDir), sourceDir);
         const isModule = sourceBaseName.match(/\.module$/);
-        const tmpDir = path.resolve(tmpDirPath, sourceRelDir);
 
-        let tmpFilePath = path.resolve(
-          tmpDir,
-          `${Date.now()}-${sourceBaseName}.css`
-        );
-
-        // When CSS is an entry-point we don't want to append Date.now()
-        if (args.kind === "entry-point")
-          tmpFilePath = path.resolve(tmpDir, `${sourceBaseName}.css`);
-
-        await ensureDir(tmpDir);
+        let tmpFilePath: string;
+        if (args.kind === "entry-point") {
+          // For entry points, we use <tempdir>/<path-within-project-root>/<file-name>.css
+          const sourceRelDir = path.relative(
+            path.dirname(rootDir),
+            path.dirname(sourceFullPath)
+          );
+          tmpFilePath = path.resolve(
+            tmpDirPath,
+            sourceRelDir,
+            `${sourceBaseName}.css`
+          );
+          await ensureDir(path.dirname(tmpFilePath));
+        } else {
+          // For others, we use <tempdir>/<unique-directory-name>/<file-name>.css
+          //
+          // This is a workaround for the following esbuild issue:
+          // https://github.com/evanw/esbuild/issues/1101
+          //
+          // esbuild is unable to find the file, even though it does exist. This only
+          // happens for files in a directory with several other entries, so by
+          // creating a unique directory name per file on every build, we guarantee
+          // that there will only every be a single file present within the directory,
+          // circumventing the esbuild issue.
+          const uniqueTmpDir = path.resolve(tmpDirPath, uniqueId());
+          tmpFilePath = path.resolve(uniqueTmpDir, `${sourceBaseName}.css`);
+        }
+        await ensureDir(path.dirname(tmpFilePath));
 
         const fileContent = await readFile(sourceFullPath);
         let css = sourceExt === ".css" ? fileContent : "";
@@ -197,6 +212,15 @@ function getSassImpl() {
     }
   }
   return require(impl);
+}
+
+let idCounter = 0;
+
+/**
+ * Generates an id that is guaranteed to be unique for the Node.JS instance.
+ */
+function uniqueId(): string {
+  return Date.now().toString(16) + (idCounter++).toString(16);
 }
 
 export default postCSSPlugin;
