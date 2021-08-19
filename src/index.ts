@@ -1,6 +1,12 @@
 import { Plugin } from "esbuild";
 import { Plugin as PostCSSPlugin } from "postcss";
-import { ensureDir, readFile, writeFile } from "fs-extra";
+import {
+  ensureDir,
+  readFile,
+  readdirSync,
+  statSync,
+  writeFile
+} from "fs-extra";
 import { TextDecoder } from "util";
 import {
   SassException,
@@ -135,7 +141,7 @@ const postCSSPlugin = ({
         return {
           namespace: isModule ? "postcss-module" : "file",
           path: tmpFilePath,
-          watchFiles: [sourceFullPath],
+          watchFiles: getFilesRecursive(sourceDir),
           pluginData: {
             originalPath: sourceFullPath
           }
@@ -197,6 +203,16 @@ function getSassImpl() {
     }
   }
   return require(impl);
+}
+
+function getFilesRecursive(directory: string): string[] {
+  return readdirSync(directory).reduce((files, file) => {
+    const name = path.join(directory, file);
+
+    return statSync(name).isDirectory()
+      ? [...files, getFilesRecursive(name)]
+      : [...files, name];
+  }, []);
 }
 
 export default postCSSPlugin;
