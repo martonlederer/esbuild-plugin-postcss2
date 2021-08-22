@@ -1,6 +1,6 @@
 {
   "name": "esbuild-plugin-postcss2",
-  "version": "0.0.10",
+  "version": "0.1.0",
   "description": "Use postcss with esbuild",
   "repository": "https://github.com/martonlederer/esbuild-plugin-postcss2",
   "author": "Marton Lederer <marton@lederer.hu>",
