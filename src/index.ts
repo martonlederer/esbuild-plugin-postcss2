@@ -226,7 +226,7 @@ function getFilesRecursive(directory: string): string[] {
     const name = path.join(directory, file);
 
     return statSync(name).isDirectory()
-      ? [...files, getFilesRecursive(name)]
+      ? [...files, ...getFilesRecursive(name)]
       : [...files, name];
   }, []);
 }
