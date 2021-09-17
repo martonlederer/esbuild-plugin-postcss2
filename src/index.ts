@@ -30,6 +30,7 @@ interface PostCSSPluginOptions {
   sassOptions?: SassOptions;
   lessOptions?: Less.Options;
   stylusOptions?: StylusRenderOptions;
+  writeToFile?: boolean;
 }
 
 interface CSSModule {
@@ -45,7 +46,8 @@ const postCSSPlugin = ({
   rootDir = process.cwd(),
   sassOptions = {},
   lessOptions = {},
-  stylusOptions = {}
+  stylusOptions = {},
+  writeToFile = true
 }: PostCSSPluginOptions): Plugin => ({
   name: "postcss2",
   setup(build) {
@@ -152,14 +154,21 @@ const postCSSPlugin = ({
         });
 
         // Write result CSS
-        await writeFile(tmpFilePath, result.css);
+        if (writeToFile) {
+          await writeFile(tmpFilePath, result.css);
+        }
 
         return {
-          namespace: isModule ? "postcss-module" : "file",
+          namespace: isModule
+            ? "postcss-module"
+            : writeToFile
+            ? "file"
+            : "postcss-text",
           path: tmpFilePath,
           watchFiles: getFilesRecursive(sourceDir),
           pluginData: {
-            originalPath: sourceFullPath
+            originalPath: sourceFullPath,
+            css: result.css
           }
         };
       }
@@ -172,16 +181,30 @@ const postCSSPlugin = ({
         const mod = modulesMap.find(
             ({ path }) => path === args?.pluginData?.originalPath
           ),
-          resolveDir = path.dirname(args.path);
+          resolveDir = path.dirname(args.path),
+          css = args?.pluginData?.css || "";
 
         return {
           resolveDir,
-          contents: `import ${JSON.stringify(
-            args.path
-          )};\nexport default ${JSON.stringify(mod && mod.map ? mod.map : {})};`
+          contents: [
+            writeToFile ? `import ${JSON.stringify(args.path)};` : null,
+            `export default ${JSON.stringify(mod && mod.map ? mod.map : {})};`,
+            writeToFile
+              ? null
+              : `export const stylesheet=${JSON.stringify(css)};`
+          ]
+            .filter(Boolean)
+            .join("\n")
         };
       }
     );
+
+    build.onLoad({ filter: /.*/, namespace: "postcss-text" }, async (args) => {
+      const css = args?.pluginData?.css || "";
+      return {
+        contents: `export default ${JSON.stringify(css)};`
+      };
+    });
   }
 });
 
