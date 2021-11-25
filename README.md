@@ -25,7 +25,7 @@ const postCssPlugin = require("esbuild-plugin-postcss2");
 esbuild.build({
   ...
   plugins: [
-    postCssPlugin()
+    postCssPlugin.default()
   ]
   ...
 });
@@ -41,7 +41,7 @@ const autoprefixer = require("autoprefixer");
 esbuild.build({
   ...
   plugins: [
-    postCssPlugin({
+    postCssPlugin.default({
       plugins: [autoprefixer]
     })
   ]
@@ -54,7 +54,7 @@ esbuild.build({
 PostCSS modules are enabled by default. You can pass in a config or disable it with the `modules` field:
 
 ```js
-postCssPlugin({
+postCssPlugin.default({
   // pass in `postcss-modules` custom options
   // set to false to disable
   modules: {
