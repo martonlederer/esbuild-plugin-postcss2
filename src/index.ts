@@ -1,5 +1,5 @@
 import { Plugin } from "esbuild";
-import { Plugin as PostCSSPlugin } from "postcss";
+import { Plugin as PostCSSPlugin, Message } from "postcss";
 import {
   ensureDir,
   readFile,
@@ -165,7 +165,9 @@ const postCSSPlugin = ({
             ? "file"
             : "postcss-text",
           path: tmpFilePath,
-          watchFiles: getFilesRecursive(sourceDir),
+          watchFiles: [result.opts.from].concat(
+            getPostCssDependencies(result.messages)
+          ),
           pluginData: {
             originalPath: sourceFullPath,
             css: result.css
@@ -261,6 +263,18 @@ let idCounter = 0;
  */
 function uniqueId(): string {
   return Date.now().toString(16) + (idCounter++).toString(16);
+}
+
+function getPostCssDependencies(messages: Message[]): string[] {
+  let dependencies = [];
+  for (const message of messages) {
+    if (message.type == "dir-dependency") {
+      dependencies.push(...getFilesRecursive(message.dir));
+    } else if (message.type == "dependency") {
+      dependencies.push(message.file);
+    }
+  }
+  return dependencies;
 }
 
 export default postCSSPlugin;

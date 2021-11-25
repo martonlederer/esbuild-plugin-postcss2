@@ -1,4 +1,5 @@
 const autoprefixer = require("autoprefixer"),
+  postCssImport = require("postcss-import"),
   { build } = require("esbuild"),
   postCSS = require("../dist"),
   { assert } = require("chai"),
@@ -45,7 +46,7 @@ describe("PostCSS esbuild tests", () => {
       })
       .catch(done);
   });
-  it("Works while waching css files", (done) => {
+  it("Works while waching css files directly", (done) => {
     let notTriggerTimeout = null;
     build({
       entryPoints: ["tests/watch.ts"],
@@ -69,6 +70,39 @@ describe("PostCSS esbuild tests", () => {
         // test if modifying the css actually triggers the onRebuild event
         const data = `.Test { display: block; }`;
         fs.writeFile("./styles/watch.css", data, (err) => {
+          if (err) return done(err);
+          notTriggerTimeout = setTimeout(() => {
+            done("Watch file not triggered!");
+          }, 1000);
+        });
+      })
+      .catch(() => process.exit(1));
+  });
+
+  it("Works while waching css files through dependencies", (done) => {
+    let notTriggerTimeout = null;
+    build({
+      entryPoints: ["tests/watch2.ts"],
+      bundle: true,
+      outdir: "dist",
+      watch: {
+        onRebuild: (error, result) => {
+          notTriggerTimeout = null;
+          if (error) return done(error);
+          assert(result);
+          done();
+        }
+      },
+      plugins: [
+        postCSS.default({
+          plugins: [autoprefixer, postCssImport]
+        })
+      ]
+    })
+      .then(() => {
+        // test if modifying the css actually triggers the onRebuild event
+        const data = `.Test { display: block; }`;
+        fs.writeFile("./styles/watch3.css", data, (err) => {
           if (err) return done(err);
           notTriggerTimeout = setTimeout(() => {
             done("Watch file not triggered!");
