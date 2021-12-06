@@ -40,15 +40,25 @@ interface CSSModule {
   };
 }
 
+export const defaultOptions: PostCSSPluginOptions = {
+  plugins: [],
+  modules: true,
+  rootDir: process.cwd(),
+  sassOptions: {},
+  lessOptions: {},
+  stylusOptions: {},
+  writeToFile: true
+};
+
 const postCSSPlugin = ({
-  plugins = [],
-  modules = true,
-  rootDir = process.cwd(),
-  sassOptions = {},
-  lessOptions = {},
-  stylusOptions = {},
-  writeToFile = true
-}: PostCSSPluginOptions): Plugin => ({
+  plugins,
+  modules,
+  rootDir,
+  sassOptions,
+  lessOptions,
+  stylusOptions,
+  writeToFile
+}: PostCSSPluginOptions = defaultOptions): Plugin => ({
   name: "postcss2",
   setup(build) {
     // get a temporary path where we can save compiled CSS
