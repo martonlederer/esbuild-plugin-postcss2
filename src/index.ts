@@ -6,7 +6,8 @@ import {
   readdirSync,
   statSync,
   stat,
-  writeFile
+  writeFile,
+  existsSync
 } from "fs-extra";
 import { TextDecoder } from "util";
 import {
@@ -100,14 +101,27 @@ const postCSSPlugin = ({
         if (!sourceFullPath)
           sourceFullPath = path.resolve(args.resolveDir, args.path);
 
+        // hack
+        let exist = existsSync(sourceFullPath + ".js");
+        if (exist) {
+          return;
+        }
+        exist = existsSync(sourceFullPath);
+        if (!exist) {
+          sourceFullPath = path.resolve(
+            process.cwd(),
+            "node_modules",
+            args.path
+          );
+        }
+
         const sourceExt = path.extname(sourceFullPath);
         const sourceBaseName = path.basename(sourceFullPath, sourceExt);
         const isModule = sourceBaseName.match(/\.module$/);
 
         const cacheVal = await queryCache(sourceFullPath, cache);
-        let tmpFilePath: string = cacheVal.outputPath;
-
-        if (cacheVal.outputCss === "") {
+        if (cacheVal.outputPath === "") {
+          let tmpFilePath: string = "";
           if (args.kind === "entry-point") {
             // For entry points, we use <tempdir>/<path-within-project-root>/<file-name>.css
             const sourceRelDir = path.relative(
@@ -140,23 +154,33 @@ const postCSSPlugin = ({
           let css = sourceExt === ".css" ? fileContent : "";
 
           // parse files with preprocessors
-          if (sourceExt === ".sass" || sourceExt === ".scss")
-            css = (
-              await renderSass({ ...sassOptions, file: sourceFullPath })
-            ).css.toString();
-          if (sourceExt === ".styl")
+          if (sourceExt === ".sass" || sourceExt === ".scss") {
+            const ret = await renderSass({
+              ...sassOptions,
+              file: sourceFullPath
+            });
+            css = ret.css.toString();
+            cacheVal.depFiles = ret.stats.includedFiles;
+          }
+          if (sourceExt === ".styl") {
             css = await renderStylus(new TextDecoder().decode(fileContent), {
               ...stylusOptions,
               filename: sourceFullPath
             });
-          if (sourceExt === ".less")
-            css = (
-              await less.render(new TextDecoder().decode(fileContent), {
+            // TODO: how to get .styl dependent files
+          }
+          if (sourceExt === ".less") {
+            const ret = await less.render(
+              new TextDecoder().decode(fileContent),
+              {
                 ...lessOptions,
                 filename: sourceFullPath,
                 rootpath: path.dirname(args.path)
-              })
-            ).css;
+              }
+            );
+            css = ret.css;
+            cacheVal.depFiles = ret.imports;
+          }
 
           // wait for plugins to complete parsing & get result
           const result = await postcss(
@@ -165,18 +189,21 @@ const postCSSPlugin = ({
             from: sourceFullPath,
             to: tmpFilePath
           });
+          cacheVal.depFiles = cacheVal.depFiles.concat(
+            getPostCssDependencies(result.messages)
+          );
+
+          cacheVal.outputPath = tmpFilePath;
+          cacheVal.outputCss = result.css;
+          // Save cache
+          if (enableCache) {
+            cache.set(sourceFullPath, cacheVal);
+            await updateDepFilesCache(cacheVal.depFiles, cache);
+          }
 
           // Write result CSS
           if (writeToFile) {
             await writeFile(tmpFilePath, result.css);
-          }
-
-          cacheVal.outputPath = tmpFilePath;
-          cacheVal.outputCss = result.css;
-          cacheVal.depFiles = getPostCssDependencies(result.messages);
-          if (enableCache) {
-            cache.set(sourceFullPath, cacheVal);
-            await updateDepFilesCache(cacheVal.depFiles, cache);
           }
         }
 
@@ -186,7 +213,7 @@ const postCSSPlugin = ({
             : writeToFile
             ? "file"
             : "postcss-text",
-          path: tmpFilePath,
+          path: cacheVal.outputPath,
           watchFiles: [sourceFullPath].concat(cacheVal.depFiles),
           pluginData: {
             originalPath: sourceFullPath,
