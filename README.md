@@ -76,3 +76,24 @@ To use preprocessors (`sass`, `scss`, `stylus`, `less`), just add the desired pr
 ```sh
 yarn add -D sass
 ```
+
+### Enable cache
+
+To reduce the rebuild time in dev mode, you can try to cache the CSS compilation result.
+
+> Note: currently it only supports `.css/.less/.scss`, doesn't support `.styl` yet.
+
+```js
+const esbuild = require("esbuild");
+const postCssPlugin = require("esbuild-plugin-postcss2");
+
+esbuild.build({
+  ...
+  plugins: [
+    postCssPlugin.default({
+      enableCache: true
+    })
+  ]
+  ...
+});
+```
