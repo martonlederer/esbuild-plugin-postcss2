@@ -6,8 +6,7 @@ import {
   readdirSync,
   statSync,
   stat,
-  writeFile,
-  existsSync
+  writeFile
 } from "fs-extra";
 import { TextDecoder } from "util";
 import {
