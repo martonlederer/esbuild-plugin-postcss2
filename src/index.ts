@@ -101,20 +101,6 @@ const postCSSPlugin = ({
         if (!sourceFullPath)
           sourceFullPath = path.resolve(args.resolveDir, args.path);
 
-        // hack
-        let exist = existsSync(sourceFullPath + ".js");
-        if (exist) {
-          return;
-        }
-        exist = existsSync(sourceFullPath);
-        if (!exist) {
-          sourceFullPath = path.resolve(
-            process.cwd(),
-            "node_modules",
-            args.path
-          );
-        }
-
         const sourceExt = path.extname(sourceFullPath);
         const sourceBaseName = path.basename(sourceFullPath, sourceExt);
         const isModule = sourceBaseName.match(/\.module$/);
