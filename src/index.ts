@@ -49,6 +49,16 @@ interface CacheVal {
   outputCss: string;
 }
 
+export const defaultOptions: PostCSSPluginOptions = {
+  plugins: [],
+  modules: true,
+  rootDir: process.cwd(),
+  sassOptions: {},
+  lessOptions: {},
+  stylusOptions: {},
+  writeToFile: true
+}
+
 const postCSSPlugin = ({
   plugins = [],
   modules = true,
@@ -58,7 +68,7 @@ const postCSSPlugin = ({
   stylusOptions = {},
   writeToFile = true,
   enableCache = false
-}: PostCSSPluginOptions): Plugin => ({
+}: PostCSSPluginOptions = defaultOptions): Plugin => ({
   name: "postcss2",
   setup(build) {
     // get a temporary path where we can save compiled CSS
