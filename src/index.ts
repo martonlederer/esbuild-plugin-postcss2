@@ -5,6 +5,7 @@ import {
   readFile,
   readdirSync,
   statSync,
+  stat,
   writeFile
 } from "fs-extra";
 import { TextDecoder } from "util";
@@ -31,6 +32,7 @@ interface PostCSSPluginOptions {
   lessOptions?: Less.Options;
   stylusOptions?: StylusRenderOptions;
   writeToFile?: boolean;
+  enableCache?: boolean;
 }
 
 interface CSSModule {
@@ -38,6 +40,13 @@ interface CSSModule {
   map: {
     [key: string]: string;
   };
+}
+
+interface CacheVal {
+  lastMtimeMs: number;
+  depFiles: string[];
+  outputPath: string;
+  outputCss: string;
 }
 
 export const defaultOptions: PostCSSPluginOptions = {
@@ -48,22 +57,24 @@ export const defaultOptions: PostCSSPluginOptions = {
   lessOptions: {},
   stylusOptions: {},
   writeToFile: true
-};
+}
 
 const postCSSPlugin = ({
-  plugins,
-  modules,
-  rootDir,
-  sassOptions,
-  lessOptions,
-  stylusOptions,
-  writeToFile
+  plugins = [],
+  modules = true,
+  rootDir = process.cwd(),
+  sassOptions = {},
+  lessOptions = {},
+  stylusOptions = {},
+  writeToFile = true,
+  enableCache = false
 }: PostCSSPluginOptions = defaultOptions): Plugin => ({
   name: "postcss2",
   setup(build) {
     // get a temporary path where we can save compiled CSS
     const tmpDirPath = tmp.dirSync().name,
-      modulesMap: CSSModule[] = [];
+      modulesMap: CSSModule[] = [],
+      cache: Map<string, CacheVal> = new Map();
 
     const modulesPlugin = postcssModules({
       generateScopedName: "[name]__[local]___[hash:base64:5]",
@@ -102,70 +113,93 @@ const postCSSPlugin = ({
         const sourceExt = path.extname(sourceFullPath);
         const sourceBaseName = path.basename(sourceFullPath, sourceExt);
         const isModule = sourceBaseName.match(/\.module$/);
-        const sourceDir = path.dirname(sourceFullPath);
 
-        let tmpFilePath: string;
-        if (args.kind === "entry-point") {
-          // For entry points, we use <tempdir>/<path-within-project-root>/<file-name>.css
-          const sourceRelDir = path.relative(
-            path.dirname(rootDir),
-            path.dirname(sourceFullPath)
-          );
-          tmpFilePath = path.resolve(
-            tmpDirPath,
-            sourceRelDir,
-            `${sourceBaseName}.css`
-          );
+        const cacheVal = await queryCache(sourceFullPath, cache);
+        if (cacheVal.outputPath === "") {
+          let tmpFilePath: string = "";
+          if (args.kind === "entry-point") {
+            // For entry points, we use <tempdir>/<path-within-project-root>/<file-name>.css
+            const sourceRelDir = path.relative(
+              path.dirname(rootDir),
+              path.dirname(sourceFullPath)
+            );
+            tmpFilePath = path.resolve(
+              tmpDirPath,
+              sourceRelDir,
+              `${sourceBaseName}.css`
+            );
+            await ensureDir(path.dirname(tmpFilePath));
+          } else {
+            // For others, we use <tempdir>/<unique-directory-name>/<file-name>.css
+            //
+            // This is a workaround for the following esbuild issue:
+            // https://github.com/evanw/esbuild/issues/1101
+            //
+            // esbuild is unable to find the file, even though it does exist. This only
+            // happens for files in a directory with several other entries, so by
+            // creating a unique directory name per file on every build, we guarantee
+            // that there will only every be a single file present within the directory,
+            // circumventing the esbuild issue.
+            const uniqueTmpDir = path.resolve(tmpDirPath, uniqueId());
+            tmpFilePath = path.resolve(uniqueTmpDir, `${sourceBaseName}.css`);
+          }
           await ensureDir(path.dirname(tmpFilePath));
-        } else {
-          // For others, we use <tempdir>/<unique-directory-name>/<file-name>.css
-          //
-          // This is a workaround for the following esbuild issue:
-          // https://github.com/evanw/esbuild/issues/1101
-          //
-          // esbuild is unable to find the file, even though it does exist. This only
-          // happens for files in a directory with several other entries, so by
-          // creating a unique directory name per file on every build, we guarantee
-          // that there will only every be a single file present within the directory,
-          // circumventing the esbuild issue.
-          const uniqueTmpDir = path.resolve(tmpDirPath, uniqueId());
-          tmpFilePath = path.resolve(uniqueTmpDir, `${sourceBaseName}.css`);
-        }
-        await ensureDir(path.dirname(tmpFilePath));
 
-        const fileContent = await readFile(sourceFullPath);
-        let css = sourceExt === ".css" ? fileContent : "";
+          const fileContent = await readFile(sourceFullPath);
+          let css = sourceExt === ".css" ? fileContent : "";
 
-        // parse files with preprocessors
-        if (sourceExt === ".sass" || sourceExt === ".scss")
-          css = (
-            await renderSass({ ...sassOptions, file: sourceFullPath })
-          ).css.toString();
-        if (sourceExt === ".styl")
-          css = await renderStylus(new TextDecoder().decode(fileContent), {
-            ...stylusOptions,
-            filename: sourceFullPath
+          // parse files with preprocessors
+          if (sourceExt === ".sass" || sourceExt === ".scss") {
+            const ret = await renderSass({
+              ...sassOptions,
+              file: sourceFullPath
+            });
+            css = ret.css.toString();
+            cacheVal.depFiles = ret.stats.includedFiles;
+          }
+          if (sourceExt === ".styl") {
+            css = await renderStylus(new TextDecoder().decode(fileContent), {
+              ...stylusOptions,
+              filename: sourceFullPath
+            });
+            // TODO: how to get .styl dependent files
+          }
+          if (sourceExt === ".less") {
+            const ret = await less.render(
+              new TextDecoder().decode(fileContent),
+              {
+                ...lessOptions,
+                filename: sourceFullPath,
+                rootpath: path.dirname(args.path)
+              }
+            );
+            css = ret.css;
+            cacheVal.depFiles = ret.imports;
+          }
+
+          // wait for plugins to complete parsing & get result
+          const result = await postcss(
+            isModule ? [modulesPlugin, ...plugins] : plugins
+          ).process(css, {
+            from: sourceFullPath,
+            to: tmpFilePath
           });
-        if (sourceExt === ".less")
-          css = (
-            await less.render(new TextDecoder().decode(fileContent), {
-              ...lessOptions,
-              filename: sourceFullPath,
-              rootpath: path.dirname(args.path)
-            })
-          ).css;
+          cacheVal.depFiles = cacheVal.depFiles.concat(
+            getPostCssDependencies(result.messages)
+          );
 
-        // wait for plugins to complete parsing & get result
-        const result = await postcss(
-          isModule ? [modulesPlugin, ...plugins] : plugins
-        ).process(css, {
-          from: sourceFullPath,
-          to: tmpFilePath
-        });
+          cacheVal.outputPath = tmpFilePath;
+          cacheVal.outputCss = result.css;
+          // Save cache
+          if (enableCache) {
+            cache.set(sourceFullPath, cacheVal);
+            await updateDepFilesCache(cacheVal.depFiles, cache);
+          }
 
-        // Write result CSS
-        if (writeToFile) {
-          await writeFile(tmpFilePath, result.css);
+          // Write result CSS
+          if (writeToFile) {
+            await writeFile(tmpFilePath, result.css);
+          }
         }
 
         return {
@@ -174,13 +208,11 @@ const postCSSPlugin = ({
             : writeToFile
             ? "file"
             : "postcss-text",
-          path: tmpFilePath,
-          watchFiles: [result.opts.from].concat(
-            getPostCssDependencies(result.messages)
-          ),
+          path: cacheVal.outputPath,
+          watchFiles: [sourceFullPath].concat(cacheVal.depFiles),
           pluginData: {
             originalPath: sourceFullPath,
-            css: result.css
+            css: cacheVal.outputCss
           }
         };
       }
@@ -285,6 +317,63 @@ function getPostCssDependencies(messages: Message[]): string[] {
     }
   }
   return dependencies;
+}
+
+async function queryCache(
+  sourceFullPath: string,
+  cache: Map<string, CacheVal>
+): Promise<CacheVal> {
+  const fileStat = await stat(sourceFullPath);
+  // fileStat: Stats {
+  //   ...
+  //   mtimeMs: 1634030364414,
+  //   mtime: 2021-10-12T09:19:24.414Z,
+  //   ...
+  // }
+  const newCacheVal: CacheVal = {
+    lastMtimeMs: fileStat.mtimeMs,
+    depFiles: [],
+    outputPath: "",
+    outputCss: ""
+  };
+
+  let cacheVal = cache.get(sourceFullPath);
+  if (cacheVal === undefined) {
+    return newCacheVal;
+  }
+  if (cacheVal.lastMtimeMs !== fileStat.mtimeMs) {
+    return newCacheVal;
+  }
+
+  // check dependent files
+  for (const depFile of cacheVal.depFiles) {
+    const depCache = cache.get(depFile);
+    if (depCache === undefined) {
+      return newCacheVal;
+    }
+
+    const depFileStat = await stat(depFile);
+    if (depCache.lastMtimeMs !== depFileStat.mtimeMs) {
+      return newCacheVal;
+    }
+  }
+
+  return cacheVal;
+}
+
+async function updateDepFilesCache(
+  depFiles: string[],
+  cache: Map<string, CacheVal>
+) {
+  for (const depFile of depFiles) {
+    const fileStat = await stat(depFile);
+    cache.set(depFile, {
+      lastMtimeMs: fileStat.mtimeMs,
+      depFiles: [],
+      outputCss: "",
+      outputPath: ""
+    });
+  }
 }
 
 export default postCSSPlugin;
