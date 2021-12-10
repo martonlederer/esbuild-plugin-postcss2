@@ -58,6 +58,7 @@ describe("PostCSS esbuild tests", () => {
     test(["tests/BasePicker.js"])
       .then((res) => {
         assert(res);
+        assert(!fs.existsSync("./dist/BasePicker.css"));
         done();
       })
       .catch(done);
