@@ -19,7 +19,7 @@ import postcss from "postcss";
 import postcssModules from "postcss-modules";
 import less from "less";
 import stylus from "stylus";
-import resolveFile from "resolve-file";
+import resolve from "resolve";
 
 type StylusRenderOptions = Parameters<typeof stylus.render>[1]; // The Stylus.RenderOptions interface doesn't seem to be exported... So next best
 
@@ -51,13 +51,13 @@ export const defaultOptions: PostCSSPluginOptions = {
 };
 
 const postCSSPlugin = ({
-  plugins,
-  modules,
-  rootDir,
-  sassOptions,
-  lessOptions,
-  stylusOptions,
-  writeToFile
+  plugins = [],
+  modules = true,
+  rootDir = process.cwd(),
+  sassOptions = {},
+  lessOptions = {},
+  stylusOptions = {},
+  writeToFile = true
 }: PostCSSPluginOptions = defaultOptions): Plugin => ({
   name: "postcss2",
   setup(build) {
@@ -94,12 +94,20 @@ const postCSSPlugin = ({
         // Namespace is empty when using CSS as an entrypoint
         if (args.namespace !== "file" && args.namespace !== "") return;
 
-        // Resolve files from node_modules (ex: npm install normalize.css)
-        let sourceFullPath = resolveFile(args.path);
-        if (!sourceFullPath)
-          sourceFullPath = path.resolve(args.resolveDir, args.path);
+        let sourceFullPath = resolve.sync(args.path, {
+          basedir: args.resolveDir
+        });
 
         const sourceExt = path.extname(sourceFullPath);
+        if (
+          sourceExt !== ".css" &&
+          sourceExt !== ".sass" &&
+          sourceExt !== ".scss" &&
+          sourceExt !== ".less" &&
+          sourceExt !== ".styl"
+        ) {
+          return;
+        }
         const sourceBaseName = path.basename(sourceFullPath, sourceExt);
         const isModule = sourceBaseName.match(/\.module$/);
         const sourceDir = path.dirname(sourceFullPath);
