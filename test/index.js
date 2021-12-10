@@ -6,6 +6,14 @@ const autoprefixer = require("autoprefixer"),
   fs = require("fs");
 
 describe("PostCSS esbuild tests", () => {
+  it("Works with empty options", (done) => {
+    testWithoutOptions(["tests/basic.ts"])
+      .then((res) => {
+        assert(res);
+        done();
+      })
+      .catch(done);
+  });
   it("Works with basic CSS imports", (done) => {
     test(["tests/basic.ts"])
       .then((res) => {
@@ -40,6 +48,14 @@ describe("PostCSS esbuild tests", () => {
   });
   it("Works with node_modules import", (done) => {
     test(["tests/node_modules.ts"])
+      .then((res) => {
+        assert(res);
+        done();
+      })
+      .catch(done);
+  });
+  it("Works with fake css file", (done) => {
+    test(["tests/BasePicker.js"])
       .then((res) => {
         assert(res);
         done();
@@ -112,6 +128,15 @@ describe("PostCSS esbuild tests", () => {
       .catch(() => process.exit(1));
   });
 });
+
+function testWithoutOptions(entryPoint) {
+  return build({
+    entryPoints: entryPoint,
+    bundle: true,
+    outdir: "dist",
+    plugins: [postCSS.default()]
+  }).catch(() => process.exit(1));
+}
 
 function test(entryPoint) {
   return build({
