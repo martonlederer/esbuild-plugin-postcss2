@@ -111,6 +111,33 @@ describe("PostCSS esbuild tests", () => {
       })
       .catch(() => process.exit(1));
   });
+
+  it("Works with custom module function", (done) => {
+    let testFilename = null;
+    build({
+      entryPoints: ["tests/basic.ts"],
+      bundle: true,
+      outdir: "dist",
+      plugins: [
+        postCSS.default({
+          plugins: [autoprefixer, postCssImport],
+          modules: true,
+          fileIsModule: (filename) => {
+            testFilename = filename;
+            return false;
+          }
+        })
+      ]
+    })
+      .then(() => {
+        // ensure the proper filename was passed
+        assert.match(testFilename, /styles\/basic\.css/);
+      })
+      .catch((e) => {
+        console.error(e);
+        process.exit(1);
+      });
+  });
 });
 
 function test(entryPoint) {
