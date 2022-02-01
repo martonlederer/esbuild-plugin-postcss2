@@ -31,6 +31,7 @@ interface PostCSSPluginOptions {
   lessOptions?: Less.Options;
   stylusOptions?: StylusRenderOptions;
   writeToFile?: boolean;
+  fileIsModule?: (filename: string) => boolean;
 }
 
 interface CSSModule {
@@ -47,7 +48,8 @@ export const defaultOptions: PostCSSPluginOptions = {
   sassOptions: {},
   lessOptions: {},
   stylusOptions: {},
-  writeToFile: true
+  writeToFile: true,
+  fileIsModule: null
 };
 
 const postCSSPlugin = ({
@@ -57,7 +59,8 @@ const postCSSPlugin = ({
   sassOptions,
   lessOptions,
   stylusOptions,
-  writeToFile
+  writeToFile,
+  fileIsModule
 }: PostCSSPluginOptions = defaultOptions): Plugin => ({
   name: "postcss2",
   setup(build) {
@@ -101,7 +104,9 @@ const postCSSPlugin = ({
 
         const sourceExt = path.extname(sourceFullPath);
         const sourceBaseName = path.basename(sourceFullPath, sourceExt);
-        const isModule = sourceBaseName.match(/\.module$/);
+        const isModule = fileIsModule
+          ? fileIsModule(sourceFullPath)
+          : sourceBaseName.match(/\.module$/);
         const sourceDir = path.dirname(sourceFullPath);
 
         let tmpFilePath: string;

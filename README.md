@@ -69,6 +69,17 @@ postCssPlugin.default({
 });
 ```
 
+As per standard any file having `module` before the extension (ie `somefile.module.css`) will be treated as a module.
+The option `fileIsModule` allows to override this behavior.
+
+```js
+postCssPlugin.default({
+  // pass a custom `fileIsModule` option to tell whether a file should be treated as a module
+  // in this example we want everything to be a module except file finishing with `global.css`
+  fileIsModule: (filepath) => !filepath.endsWith(".global.css")
+});
+```
+
 ### Preprocessors
 
 To use preprocessors (`sass`, `scss`, `stylus`, `less`), just add the desired preprocessor as a `devDependency`:
