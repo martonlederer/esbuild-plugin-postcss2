@@ -1,3 +1,6 @@
+# Looking for a maintainer!
+Unfortunately I don't have time for this plugin. Please contact me if you'd like to take on this project.
+
 # esbuild-plugin-postcss2
 
 This plugin is an optimized, type-friendly version of [esbuild-plugin-postcss](https://github.com/deanc/esbuild-plugin-postcss). It supports CSS preprocessors and CSS modules.
