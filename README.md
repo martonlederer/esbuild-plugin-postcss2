@@ -28,7 +28,7 @@ const postCssPlugin = require("esbuild-plugin-postcss2");
 esbuild.build({
   ...
   plugins: [
-    postCssPlugin.default()
+    postCssPlugin.default({})
   ]
   ...
 });
