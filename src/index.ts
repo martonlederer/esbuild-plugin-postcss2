@@ -87,6 +87,7 @@ const postCSSPlugin = ({
         const sourceRelDir = path.relative(path.dirname(rootDir), sourceDir);
         const isModule = sourceBaseName.match(/\.module$/);
         const tmpDir = path.resolve(tmpDirPath, sourceRelDir);
+        const watchFiles = [sourceFullPath];
 
         let tmpFilePath = path.resolve(
           tmpDir,
@@ -103,10 +104,11 @@ const postCSSPlugin = ({
         let css = sourceExt === ".css" ? fileContent : "";
 
         // parse files with preprocessors
-        if (sourceExt === ".sass" || sourceExt === ".scss")
-          css = (
-            await renderSass({ ...sassOptions, file: sourceFullPath })
-          ).css.toString();
+        if (sourceExt === ".sass" || sourceExt === ".scss") {
+          let result = await renderSass({ ...sassOptions, file: sourceFullPath })
+          css = result.css.toString();
+          watchFiles.push(...result.stats.includedFiles);
+        }
         if (sourceExt === ".styl")
           css = await renderStylus(new TextDecoder().decode(fileContent), {
             ...stylusOptions,
@@ -135,7 +137,7 @@ const postCSSPlugin = ({
         return {
           namespace: isModule ? "postcss-module" : "file",
           path: tmpFilePath,
-          watchFiles: [sourceFullPath],
+          watchFiles,
           pluginData: {
             originalPath: sourceFullPath
           }
