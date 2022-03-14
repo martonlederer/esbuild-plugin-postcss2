@@ -108,6 +108,7 @@ const postCSSPlugin = ({
           ? fileIsModule(sourceFullPath)
           : sourceBaseName.match(/\.module$/);
         const sourceDir = path.dirname(sourceFullPath);
+        const watchFiles = [sourceFullPath];
 
         let tmpFilePath: string;
         if (args.kind === "entry-point") {
@@ -142,10 +143,11 @@ const postCSSPlugin = ({
         let css = sourceExt === ".css" ? fileContent : "";
 
         // parse files with preprocessors
-        if (sourceExt === ".sass" || sourceExt === ".scss")
-          css = (
-            await renderSass({ ...sassOptions, file: sourceFullPath })
-          ).css.toString();
+        if (sourceExt === ".sass" || sourceExt === ".scss") {
+          const sassResult = await renderSass({...sassOptions, file: sourceFullPath})
+          css = sassResult.css.toString();
+          watchFiles.push(...sassResult.stats.includedFiles);
+        }
         if (sourceExt === ".styl")
           css = await renderStylus(new TextDecoder().decode(fileContent), {
             ...stylusOptions,
@@ -167,6 +169,7 @@ const postCSSPlugin = ({
           from: sourceFullPath,
           to: tmpFilePath
         });
+        watchFiles.push(...getPostCssDependencies(result.messages));
 
         // Write result CSS
         if (writeToFile) {
@@ -180,9 +183,7 @@ const postCSSPlugin = ({
             ? "file"
             : "postcss-text",
           path: tmpFilePath,
-          watchFiles: [result.opts.from].concat(
-            getPostCssDependencies(result.messages)
-          ),
+          watchFiles,
           pluginData: {
             originalPath: sourceFullPath,
             css: result.css
